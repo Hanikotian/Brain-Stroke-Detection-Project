@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroDetect - Brain Stroke Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .header .description {
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.8;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .upload-section:hover {
+            transform: translateY(-5px);
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: linear-gradient(45deg, #f8f9ff, #e8ebff);
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: linear-gradient(45deg, #e8ebff, #f8f9ff);
+            transform: scale(1.02);
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: linear-gradient(45deg, #e8f5e8, #f0fff0);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .upload-subtext {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .no-results {
+            color: #888;
+            text-align: center;
+        }
+
+        .no-results-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            animation: fadeInUp 0.5s ease;
+            width: 100%;
+        }
+
+        .result-positive {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .result-negative {
+            background: linear-gradient(135deg, #00d2d3, #54a0ff);
+            color: white;
+        }
+
+        .result-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .result-confidence {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .result-interpretation {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .result-recommendation {
+            font-size: 0.9rem;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #667eea;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f8f9ff, #e8ebff);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .info-card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .info-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .info-card p {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .developer-info {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .developer-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .developer-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .developer-detail {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .disclaimer {
+            background: linear-gradient(135deg, #ffd32a, #ff9f1a);
+            color: #8b4513;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 NeuroDetect</h1>
+            <div class="subtitle">AI-Powered Brain Stroke Detection System</div>
+            <div class="description">
+                Advanced machine learning system for early stroke detection in brain MRI scans.
+                Using state-of-the-art deep learning models including CNN and Transfer Learning with ResNet50
+                to assist medical professionals in rapid and accurate stroke diagnosis.
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #333;">How It Works</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-card-icon">📤</div>
+                    <h3>Upload MRI Scan</h3>
+                    <p>Drag and drop or select your brain MRI image (PNG, JPG, JPEG)</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">🤖</div>
+                    <h3>AI Analysis</h3>
+                    <p>Our trained neural network analyzes the image for stroke indicators</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">📊</div>
+                    <h3>Get Results</h3>
+                    <p>Receive instant analysis with confidence scores and recommendations</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <h2 style="margin-bottom: 20px; color: #333;">Upload MRI Scan</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">🧠</div>
+                    <div class="upload-text">Drag & Drop your MRI scan here</div>
+                    <div class="upload-subtext">or click to browse files</div>
+                    <div class="upload-subtext" style="margin-top: 10px;">Supported formats: PNG, JPG, JPEG</div>
+                    <button class="btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+                        Choose File
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" />
+            </div>
+
+            <div class="results-section" id="resultsSection">
+                <div class="no-results">
+                    <div class="no-results-icon">🔍</div>
+                    <h3>No Analysis Yet</h3>
+                    <p>Upload an MRI scan to get started with the analysis</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            ⚠️ <strong>Medical Disclaimer:</strong> This tool is for research and educational purposes only.
+            Always consult with qualified medical professionals for actual diagnosis and treatment decisions.
+        </div>
+
+        <div class="developer-info">
+            <div class="developer-avatar">HK</div>
+            <h2>Developed by Hani Kotian</h2>
+            <p style="margin: 10px 0; opacity: 0.8;">AI/ML Engineer & Medical Technology Enthusiast</p>
+
+            <div class="developer-details">
+                <div class="developer-detail">
+                    <strong>📧 Email</strong><br>
+                    hani.kotian04@gmail.com
+                </div>
+                <div class="developer-detail">
+                    <strong>🇮🇳 Country</strong><br>
+                    India
+                </div>
+                <div class="developer-detail">
+                    <strong>🎓 Education</strong><br>
+                    Graduate from Don Bosco Institute of Technology, Mumbai (2025)
+                </div>
+                <div class="developer-detail">
+                    <strong>💻 Specialization</strong><br>
+                    Deep Learning, Computer Vision, Medical AI
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const resultsSection = document.getElementById('resultsSection');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            if (!uploadBtn.disabled) {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select a valid image file (PNG, JPG, JPEG)');
+                return;
+            }
+
+            // Check file size (max 16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                showError('File too large. Please upload an image smaller than 16MB.');
+                return;
+            }
+
+            // Show loading state
+            showLoading();
+
+            // Convert to base64 and send to backend
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                analyzeImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showLoading() {
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Processing...';
+
+            resultsSection.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <h3>Analyzing MRI Scan...</h3>
+                    <p>Our AI model is processing your image</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Choose File';
+
+            resultsSection.innerHTML = `
+                <div class="error-message">
+                    <h3>Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        async function analyzeImage(imageSrc) {
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: imageSrc
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    showError(data.error || 'Analysis failed');
+                    return;
+                }
+
+                // Display results
+                displayResults(imageSrc, data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Network error. Please check your connection and try again.');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Choose File';
+            }
+        }
+
+        function displayResults(imageSrc, data) {
+            const confidencePercentage = (data.confidence * 100).toFixed(1);
+            const resultClass = data.has_stroke ? 'result-positive' : 'result-negative';
+            const resultIcon = data.has_stroke ? '⚠️' : '✅';
+            const resultTitle = data.has_stroke ? 'Stroke Indicators Detected' : 'No Stroke Detected';
+
+            const resultHTML = `
+                <img src="${imageSrc}" alt="MRI Scan" class="image-preview">
+                <div class="result-card ${resultClass}">
+                    <div class="result-icon">${resultIcon}</div>
+                    <div class="result-title">${resultTitle}</div>
+                    <div class="result-confidence">
+                        Confidence: ${confidencePercentage}%
+                    </div>
+                    <div class="result-interpretation">
+                        ${data.interpretation}
+                    </div>
+                    <div class="result-recommendation">
+                        ${data.recommendation}
+                    </div>
+                </div>
+            `;
+
+            resultsSection.innerHTML = resultHTML;
+        }
+
+        // Add smooth scrolling
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
